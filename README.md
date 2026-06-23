@@ -6,7 +6,7 @@ If you need Android, that is covered by [sdcb/opencvsharp-mini-runtime](https://
 
 **Please note**: this package is a **full replacement** for `OpenCvSharp4` that also includes the native runtime.
 
-This has the downside of not being usable with any packages that transitively include `OpenCvSharp4`. See [#future](Future) for a cleaner approach with any future changes.
+This has the downside of not being usable with any packages that transitively include `OpenCvSharp4`. See [Future](#future) for a cleaner approach with any future changes.
 
 ## Usage
 

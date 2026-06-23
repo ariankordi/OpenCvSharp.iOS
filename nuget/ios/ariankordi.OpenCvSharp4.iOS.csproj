@@ -58,6 +58,6 @@
           PackagePath="buildTransitive\net9.0\ariankordi.OpenCvSharp4.iOS.targets" />
 
     <None Include="..\icon\opencvsharp.png" Pack="true" PackagePath="" />
-    <None Include="..\..\..\README.md" Pack="true" PackagePath="" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>

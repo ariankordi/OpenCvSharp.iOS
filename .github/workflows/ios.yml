@@ -16,12 +16,20 @@ on:
         type: boolean
         default: true
 
+# packages: write is required for `dotnet nuget push` to GitHub Packages with GITHUB_TOKEN;
+# without it the push returns 403.
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     runs-on: macos-15
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install .NET + iOS workload
         uses: actions/setup-dotnet@v4
