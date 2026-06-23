@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: true
           fetch-depth: 1
@@ -75,7 +75,7 @@ jobs:
             -C cmake/opencv_build_options.cmake `
             -S opencv `
             -B opencv/build `
-            -G "Visual Studio 17 2022" -A x64 `
+            -G "Visual Studio 18 2026" -A x64 `
             -D CMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -D VCPKG_TARGET_TRIPLET=x64-windows-static `
             -D VCPKG_MANIFEST_INSTALL=OFF `
@@ -133,7 +133,7 @@ jobs:
           cmake `
             -S src `
             -B src/build `
-            -G "Visual Studio 17 2022" -A x64 `
+            -G "Visual Studio 18 2026" -A x64 `
             -D CMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE/opencv_artifacts" `
             -D CMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -D VCPKG_TARGET_TRIPLET=x64-windows-static `
@@ -149,7 +149,7 @@ jobs:
           cmake `
             -S src `
             -B src/build_slim `
-            -G "Visual Studio 17 2022" -A x64 `
+            -G "Visual Studio 18 2026" -A x64 `
             -D CMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE/opencv_artifacts" `
             -D CMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake" `
             -D VCPKG_TARGET_TRIPLET=x64-windows-static `
@@ -249,7 +249,7 @@ jobs:
           dotnet run -c Release --runtime win-x64 -- "${env:GITHUB_WORKSPACE}" "${env:GITHUB_WORKSPACE}\artifacts" ${{env.OPENCV_VERSION}}
 
       - name: Upload NuGet packages and Release packages
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: packages_windows
           path: ${{ github.workspace }}\artifacts
@@ -260,7 +260,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: true
           fetch-depth: 1
@@ -412,7 +412,7 @@ jobs:
           dotnet pack nuget/OpenCvSharp4.runtime.win-arm64.slim.csproj -o artifacts -p:Version=$version
 
       - name: Upload NuGet packages
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: packages_windows_arm64
           path: ${{ github.workspace }}\artifacts
