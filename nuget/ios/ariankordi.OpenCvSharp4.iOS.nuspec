@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>OpenCvSharp4.runtime.ios</id>
+    <id>ariankordi.OpenCvSharp4.iOS</id>
     <version>4.13.0.1</version>
     <title>OpenCvSharp for iOS (managed + native, device + simulator, arm64)</title>
     <authors>shimat</authors>
@@ -39,8 +39,8 @@
       non-iOS consumers are unaffected. This also sidesteps NU1012 (no platform TFM in path).
       buildTransitive/ flows the import through to transitive consumers.
     -->
-    <file src="OpenCvSharp4.runtime.ios.targets" target="build/OpenCvSharp4.runtime.ios.targets" />
-    <file src="OpenCvSharp4.runtime.ios.targets" target="buildTransitive/OpenCvSharp4.runtime.ios.targets" />
+    <file src="ariankordi.OpenCvSharp4.iOS.targets" target="build/ariankordi.OpenCvSharp4.iOS.targets" />
+    <file src="ariankordi.OpenCvSharp4.iOS.targets" target="buildTransitive/ariankordi.OpenCvSharp4.iOS.targets" />
 
     <file src="../icon/opencvsharp.png" target="" />
     <file src="../README.runtime.md" target="" />

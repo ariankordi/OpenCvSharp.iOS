@@ -200,8 +200,10 @@ merge_static() {
         opencv_libs+=("$f")
     done < <(find "$opencv_prefix/lib" -name "*.a" -print0)
 
+    # Suppress "has no symbols" warnings from the disabled-module empty .o files.
+    # The || true prevents pipefail from treating grep's exit 1 (no non-warning lines) as failure.
     libtool -static -o "$merged_out" "$extern_a" "${opencv_libs[@]}" "$stubs_o" 2>&1 \
-        | grep -v "^libtool: warning"
+        | grep -v "^libtool: warning\|^ranlib: warning" || true
     echo "Merged: $(du -sh "$merged_out" | cut -f1)"
 }
 
@@ -258,4 +260,4 @@ echo "xcframework: $XCFRAMEWORK_OUT"
 echo ""
 echo "Next steps:"
 echo "  dotnet build src/OpenCvSharp/OpenCvSharp.csproj -f net9.0-ios -c Release"
-echo "  mono ios-build/nuget.exe pack nuget/ios/OpenCvSharp4.runtime.ios.nuspec -OutputDirectory ios-build/nupkg"
+echo "  mono ios-build/nuget.exe pack nuget/ios/ariankordi.OpenCvSharp4.iOS.nuspec -OutputDirectory ios-build/nupkg"

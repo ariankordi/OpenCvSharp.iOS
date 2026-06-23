@@ -5,7 +5,7 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
 
     <!-- NuGet Package Metadata -->
-    <PackageId>OpenCvSharp4.runtime.ios</PackageId>
+    <PackageId>ariankordi.OpenCvSharp4.iOS</PackageId>
     <Title>OpenCvSharp for iOS (managed + native, device + simulator, arm64)</Title>
     <Authors>shimat</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -50,12 +50,12 @@
       MSBuild targets that inject <NativeReference> into the consuming MAUI project.
       The condition inside gates on -ios TFMs only.
     -->
-    <None Include="OpenCvSharp4.runtime.ios.targets"
+    <None Include="ariankordi.OpenCvSharp4.iOS.targets"
           Pack="true"
-          PackagePath="build\net9.0\OpenCvSharp4.runtime.ios.targets" />
-    <None Include="OpenCvSharp4.runtime.ios.targets"
+          PackagePath="build\net9.0\ariankordi.OpenCvSharp4.iOS.targets" />
+    <None Include="ariankordi.OpenCvSharp4.iOS.targets"
           Pack="true"
-          PackagePath="buildTransitive\net9.0\OpenCvSharp4.runtime.ios.targets" />
+          PackagePath="buildTransitive\net9.0\ariankordi.OpenCvSharp4.iOS.targets" />
 
     <None Include="..\icon\opencvsharp.png" Pack="true" PackagePath="" />
     <None Include="..\README.runtime.md" Pack="true" PackagePath="" />
