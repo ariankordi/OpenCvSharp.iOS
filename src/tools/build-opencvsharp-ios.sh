@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 # Build OpenCV (static, minimal) + OpenCvSharpExtern (static) for iOS device and simulator,
-# generate abort-stubs for all P/Invoke symbols not in the minimal lib so the iOS static
-# linker is satisfied, then assemble an xcframework covering both arm64 slices.
+# compile abort-stubs for all non-minimal symbols so the iOS static linker is satisfied,
+# then assemble an xcframework covering both arm64 slices.
 #
-# Prerequisites: Xcode, cmake >= 3.15, python3.
+# Prerequisites: Xcode, cmake >= 3.15, Ninja.
 #
 # Usage (run from the repo root):
 #   src/tools/build-opencvsharp-ios.sh
 #
+# The stub symbol list is read from src/tools/ios-stubs.txt (committed to the repo).
+# To regenerate it after an OpenCV/OpenCvSharp version update:
+#   src/tools/generate-ios-stubs.sh /path/to/libOpenCvSharpExtern.so
+#
 # Outputs:
-#   ios-build/OpenCvSharpExtern.xcframework   — ready to drop into the NuGet package
+#   ios-build/OpenCvSharpExtern.xcframework   — ready for dotnet pack
 
 set -euo pipefail
 
