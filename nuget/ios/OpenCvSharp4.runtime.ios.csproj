@@ -37,18 +37,24 @@
           Pack="true"
           PackagePath="OpenCvSharpExtern.xcframework\%(RecursiveDir)%(Filename)%(Extension)" />
 
-    <!-- MSBuild targets that inject <NativeReference> into the consuming MAUI project -->
-    <None Include="OpenCvSharp4.runtime.ios.targets"
-          Pack="true"
-          PackagePath="build\net8.0-ios\OpenCvSharp4.runtime.ios.targets" />
     <!--
-      Also install for net9.0-ios, net10.0-ios, etc. via a TFM-agnostic fallback.
-      NuGet resolves build\{tfm}\*.targets before build\*.targets, but the -ios suffix
-      means only ios consumers pick this up even from the generic path.
+      MSBuild targets that inject <NativeReference> into the consuming MAUI project.
+      Use build\net8.0\ (not build\net8.0-ios\) to avoid NU1012: NuGet SDK 10+ requires
+      a full platform version for platform-specific TFMs in PackagePath (net8.0-ios16.0 etc).
+      The condition inside the targets file already gates injection on -ios TFMs only, so
+      non-iOS consumers referencing this package are unaffected.
+      buildTransitive\ ensures transitive consumers (e.g. a class library used by the MAUI app)
+      also get the NativeReference injected.
     -->
     <None Include="OpenCvSharp4.runtime.ios.targets"
           Pack="true"
-          PackagePath="buildTransitive\net8.0-ios\OpenCvSharp4.runtime.ios.targets" />
+          PackagePath="build\net8.0\OpenCvSharp4.runtime.ios.targets" />
+    <None Include="OpenCvSharp4.runtime.ios.targets"
+          Pack="true"
+          PackagePath="buildTransitive\net8.0\OpenCvSharp4.runtime.ios.targets" />
+
+    <!-- Placeholder to suppress NU5127/NU5128: this is a native-only package with no managed assembly -->
+    <None Include="..\..\.gitignore" Pack="true" PackagePath="lib\net8.0\_._" Visible="false" />
 
     <None Include="..\icon\opencvsharp.png" Pack="true" PackagePath="" />
     <None Include="..\README.runtime.md" Pack="true" PackagePath="" />
