@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net9.0-ios18.0</TargetFramework>
     <NoBuild>true</NoBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput>
 
@@ -24,6 +24,8 @@
     <RepositoryUrl>https://github.com/ariankordi/OpenCvSharp.iOS.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- NU5128: intentional mismatch — project targets ios18.0 (satisfies SDK) but lib/ is ios15.0 (minimum consumers need). -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
@@ -36,10 +38,10 @@
     <!-- Managed assembly compiled with DllExtern = "__Internal" for iOS static linking -->
     <None Include="..\..\src\OpenCvSharp\bin\Release\net9.0-ios\OpenCvSharp.dll"
           Pack="true"
-          PackagePath="lib\net9.0-ios\OpenCvSharp.dll" />
+          PackagePath="lib\net9.0-ios15.0\OpenCvSharp.dll" />
     <None Include="..\..\src\OpenCvSharp\bin\Release\net9.0-ios\OpenCvSharp.xml"
           Pack="true"
-          PackagePath="lib\net9.0-ios\OpenCvSharp.xml" />
+          PackagePath="lib\net9.0-ios15.0\OpenCvSharp.xml" />
 
     <!-- xcframework: both ios-arm64 (device) and ios-arm64-simulator slices -->
     <None Include="..\..\ios-build\OpenCvSharpExtern.xcframework\**"

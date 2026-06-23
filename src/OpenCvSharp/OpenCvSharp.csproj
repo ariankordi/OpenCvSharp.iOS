@@ -82,6 +82,10 @@
     <DefineConstants>TRACE;DOTNETCORE;</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$(TargetFramework.Contains('-ios'))">
+    <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' == 'Release-JP' ">
     <DefineConstants>$(DefineConstants);LANG_JP</DefineConstants>
   </PropertyGroup>
