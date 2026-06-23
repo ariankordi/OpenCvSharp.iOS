@@ -1,0 +1,74 @@
+name: iOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Package version (e.g. 4.13.0.2)'
+        required: true
+        default: '4.13.0.1'
+      publish_nuget:
+        description: 'Push to NuGet.org'
+        type: boolean
+        default: false
+      publish_github:
+        description: 'Push to GitHub Packages'
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install .NET + iOS workload
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - run: dotnet workload install ios
+
+      - name: Install dependencies (cmake, ninja)
+        run: brew install cmake ninja
+
+      - name: Build xcframework
+        run: bash src/tools/build-opencvsharp-ios.sh
+        # produces ios-build/OpenCvSharpExtern.xcframework
+
+      - name: Build managed assembly (net9.0-ios)
+        run: |
+          dotnet build src/OpenCvSharp/OpenCvSharp.csproj \
+            -f net9.0-ios \
+            -c Release
+
+      - name: Pack NuGet
+        run: |
+          dotnet pack nuget/ios/ariankordi.OpenCvSharp4.iOS.csproj \
+            -c Release \
+            -p:Version=${{ github.event.inputs.version }} \
+            -o ./artifacts
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-ios
+          path: artifacts/*.nupkg
+          retention-days: 30
+
+      - name: Push to GitHub Packages
+        if: ${{ github.event.inputs.publish_github == 'true' }}
+        run: |
+          dotnet nuget push artifacts/*.nupkg \
+            --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+            --api-key ${{ secrets.GITHUB_TOKEN }} \
+            --skip-duplicate
+
+      - name: Push to NuGet.org
+        if: ${{ github.event.inputs.publish_nuget == 'true' }}
+        run: |
+          dotnet nuget push artifacts/*.nupkg \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key ${{ secrets.NUGET_ORG_API_KEY }} \
+            --skip-duplicate

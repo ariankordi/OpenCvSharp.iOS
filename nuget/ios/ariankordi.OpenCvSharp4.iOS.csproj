@@ -7,9 +7,9 @@
     <!-- NuGet Package Metadata -->
     <PackageId>ariankordi.OpenCvSharp4.iOS</PackageId>
     <Title>OpenCvSharp for iOS (managed + native, device + simulator, arm64)</Title>
-    <Authors>shimat</Authors>
+    <Authors>shimat;ariankordi</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/shimat/opencvsharp</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/ariankordi/OpenCvSharp.iOS</PackageProjectUrl>
     <PackageIcon>opencvsharp.png</PackageIcon>
     <Description>
       OpenCvSharp4 for .NET MAUI iOS. Bundles the managed assembly (compiled with
@@ -21,10 +21,10 @@
     <PackageTags>Image Processing OpenCV Wrapper FFI opencvsharp ios maui</PackageTags>
     <Copyright>Copyright 2008-2026</Copyright>
     <PackageReleaseNotes></PackageReleaseNotes>
-    <RepositoryUrl>https://github.com/shimat/opencvsharp.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/ariankordi/OpenCvSharp.iOS.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageReadmeFile>README.runtime.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <!--
@@ -58,6 +58,6 @@
           PackagePath="buildTransitive\net9.0\ariankordi.OpenCvSharp4.iOS.targets" />
 
     <None Include="..\icon\opencvsharp.png" Pack="true" PackagePath="" />
-    <None Include="..\README.runtime.md" Pack="true" PackagePath="" />
+    <None Include="..\..\..\README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>
