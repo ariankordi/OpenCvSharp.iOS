@@ -19,7 +19,7 @@ Because this package replaces `OpenCvSharp4` only for iOS, for cross-platform MA
     </ItemGroup>
     <!-- OpenCvSharp iOS package: provides both OpenCvSharp4 and the runtime. -->
     <ItemGroup Condition="$(TargetFramework.Contains('-ios'))">
-      <PackageReference Include="ariankordi.OpenCvSharp4.iOS" Version="4.13.0.1" />
+      <PackageReference Include="ariankordi.OpenCvSharp4.iOS" Version="4.13.0.20260623" />
     </ItemGroup>
     <!-- Other platforms: Use Sdcb mini runtime for Android, then Windows runtime for PC. -->
     <ItemGroup Condition="$(TargetFramework.Contains('-android'))">
