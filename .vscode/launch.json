@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MauiTest — iPhone 13 Simulator",
+            "type": "maui",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/MauiTest/BeginnersTask.csproj",
+            "target": "769E92FB-6F7A-4099-AFB4-085AABF7E756"
+        },
+        {
+            "name": ".NET MAUI",
+            "type": "maui",
+            "request": "launch",
+            "preLaunchTask": "maui: Build"
+        }
+    ]
+}

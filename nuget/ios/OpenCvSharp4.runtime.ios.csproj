@@ -54,7 +54,7 @@
           PackagePath="buildTransitive\net8.0\OpenCvSharp4.runtime.ios.targets" />
 
     <!-- Placeholder to suppress NU5127/NU5128: this is a native-only package with no managed assembly -->
-    <None Include="..\..\.gitignore" Pack="true" PackagePath="lib\net8.0\_._" Visible="false" />
+    <None Include="_._" Pack="true" PackagePath="lib\net8.0\_._" Visible="false" />
 
     <None Include="..\icon\opencvsharp.png" Pack="true" PackagePath="" />
     <None Include="..\README.runtime.md" Pack="true" PackagePath="" />
