@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Build OpenCV (static, minimal) + OpenCvSharpExtern (static) for iOS device and simulator,
-# then assemble an xcframework covering both arm64 slices.
+# generate abort-stubs for all P/Invoke symbols not in the minimal lib so the iOS static
+# linker is satisfied, then assemble an xcframework covering both arm64 slices.
 #
-# Prerequisites: Xcode, cmake >= 3.15.
+# Prerequisites: Xcode, cmake >= 3.15, python3.
 #
 # Usage (run from the repo root):
 #   src/tools/build-opencvsharp-ios.sh
@@ -134,11 +135,117 @@ build_extern() {
     cmake --build "$out_dir" --config Release --parallel
 }
 
+# Generate a C source file with abort-stubs for every P/Invoke entry point declared in the
+# managed OpenCvSharp.dll that is NOT already provided by the real extern lib.
+#
+# Why: iOS static linking requires every referenced symbol to physically exist at link time.
+# The managed DLL declares [DllImport] for all OpenCV modules, but we only build a minimal
+# native lib (core/imgproc/imgcodecs). Calling a stub crashes immediately with a clear
+# message — better than a mysterious link error or silent misbehavior.
+generate_stubs() {
+    local extern_a="$1"   # real static lib to diff against
+    local out_c="$2"      # output .c file
+
+    echo "=== Generate abort-stubs ==="
+
+    local managed_dll="$ROOT_DIR/src/OpenCvSharp/bin/Release/net9.0-ios/OpenCvSharp.dll"
+    if [[ ! -f "$managed_dll" ]]; then
+        echo "ERROR: managed dll not found at $managed_dll"
+        echo "Run: dotnet build src/OpenCvSharp/OpenCvSharp.csproj -f net9.0-ios -c Release"
+        exit 1
+    fi
+
+    # Extract C-linkage (non-mangled) symbols already defined in the real lib.
+    local real_symbols
+    real_symbols=$(nm "$extern_a" 2>/dev/null \
+        | grep ' T _' \
+        | grep -v '__Z' \
+        | sed 's/.* T _//' \
+        | sort -u)
+
+    # Extract P/Invoke entry-point names from ALL C# source files under NativeMethods/
+    # (files are organized in subdirectories: calib3d/, core/, dnn/, etc.).
+    # Strategy: grep for static extern declarations; the method name IS the native entry point
+    # (ExactSpelling = true on all DllImport calls, except a few overloads that use
+    # explicit EntryPoint — capture those separately).
+    #
+    # Pattern 1: "public static extern <ReturnType> <MethodName>(" — method name = entry point.
+    # Pattern 2: EntryPoint = "name" — explicit override.
+    local cs_dir="$ROOT_DIR/src/OpenCvSharp/Internal/PInvoke/NativeMethods"
+    local all_pinvokes
+    all_pinvokes=$(
+        {
+            # Implicit: method name is the entry point (use find to cover all subdirectories)
+            find "$cs_dir" -name "*.cs" -exec grep -h 'public static extern' {} \; \
+                | grep -oP '(?<=extern )[A-Za-z0-9_<>?]+\s+\K[a-z][a-zA-Z0-9_]+(?=\()' || true
+            # Explicit EntryPoint = "name"
+            find "$cs_dir" -name "*.cs" -exec grep -h 'EntryPoint' {} \; \
+                | grep -oP '(?<=EntryPoint = ")[^"]+' || true
+        } | sort -u
+    )
+
+    # Compute stubs = all P/Invoke names minus what the real lib already provides.
+    local stub_symbols
+    stub_symbols=$(comm -23 \
+        <(echo "$all_pinvokes" | sort -u) \
+        <(echo "$real_symbols" | sort -u))
+
+    local stub_count
+    stub_count=$(echo "$stub_symbols" | grep -c . || true)
+    echo "Real symbols: $(echo "$real_symbols" | grep -c . || true)"
+    echo "P/Invoke declarations: $(echo "$all_pinvokes" | grep -c . || true)"
+    echo "Stubs to generate: $stub_count"
+
+    # Emit the C stub file.
+    # Each stub calls abort() with a message so callers get an immediate, clear crash rather
+    # than silent wrong behavior. __attribute__((cold)) keeps them out of instruction caches.
+    cat > "$out_c" <<'HEADER'
+/* Auto-generated abort-stubs for OpenCvSharp iOS minimal build.
+ * These satisfy the static linker for P/Invoke entry points that are declared in the
+ * managed OpenCvSharp.dll but not implemented in the minimal native lib (core/imgproc/imgcodecs).
+ * Calling any of these at runtime will abort with a descriptive message. */
+#include <stdio.h>
+#include <stdlib.h>
+
+HEADER
+
+    while IFS= read -r sym; do
+        [[ -z "$sym" ]] && continue
+        printf '__attribute__((cold)) void %s() {\n' "$sym" >> "$out_c"
+        printf '    fprintf(stderr, "OpenCvSharp iOS: %s is not available in the minimal build (core/imgproc/imgcodecs only).\\n");\n' "$sym" >> "$out_c"
+        printf '    abort();\n}\n\n' >> "$out_c"
+    done <<< "$stub_symbols"
+
+    echo "Generated: $out_c ($stub_count stubs)"
+}
+
+compile_stubs() {
+    local slice="$1"   # "device" or "simulator"
+    local in_c="$2"
+    local out_o="$3"
+
+    echo "=== Compile stubs [$slice] ==="
+    local sdk target
+    if [[ "$slice" == "device" ]]; then
+        sdk=$(xcrun --sdk iphoneos --show-sdk-path)
+        target="arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}"
+    else
+        sdk=$(xcrun --sdk iphonesimulator --show-sdk-path)
+        target="arm64-apple-ios${IPHONEOS_DEPLOYMENT_TARGET}-simulator"
+    fi
+
+    xcrun clang \
+        -target "$target" \
+        -isysroot "$sdk" \
+        -O0 -c "$in_c" -o "$out_o"
+}
+
 merge_static() {
     local slice="$1"
     local opencv_prefix="$2"
     local extern_dir="$3"
-    local merged_out="$4"
+    local stubs_o="$4"
+    local merged_out="$5"
 
     echo "=== Merge static archives [$slice] ==="
     local extern_a="$extern_dir/OpenCvSharpExtern/libOpenCvSharpExtern.a"
@@ -147,7 +254,7 @@ merge_static() {
         opencv_libs+=("$f")
     done < <(find "$opencv_prefix/lib" -name "*.a" -print0)
 
-    libtool -static -o "$merged_out" "$extern_a" "${opencv_libs[@]}"
+    libtool -static -o "$merged_out" "$extern_a" "${opencv_libs[@]}" "$stubs_o"
     echo "Merged archive: $(du -sh "$merged_out" | cut -f1)"
 }
 
@@ -186,14 +293,24 @@ build_opencv "simulator" "$SIM_TOOLCHAIN"    "$SIM_OPENCV_PREFIX"
 build_extern "device"    "$DEVICE_OPENCV_PREFIX" "$DEVICE_EXTERN_DIR"
 build_extern "simulator" "$SIM_OPENCV_PREFIX"    "$SIM_EXTERN_DIR"
 
+# Generate stubs once (same managed DLL, same entry point list for both slices).
+STUBS_C="$BUILD_DIR/opencvsharp_stubs.c"
+generate_stubs "$DEVICE_EXTERN_DIR/OpenCvSharpExtern/libOpenCvSharpExtern.a" "$STUBS_C"
+
+DEVICE_STUBS_O="$BUILD_DIR/stubs-device.o"
+SIM_STUBS_O="$BUILD_DIR/stubs-simulator.o"
+compile_stubs "device"    "$STUBS_C" "$DEVICE_STUBS_O"
+compile_stubs "simulator" "$STUBS_C" "$SIM_STUBS_O"
+
 DEVICE_MERGED="$BUILD_DIR/merged-device.a"
 SIM_MERGED="$BUILD_DIR/merged-simulator.a"
-merge_static "device"    "$DEVICE_OPENCV_PREFIX" "$DEVICE_EXTERN_DIR" "$DEVICE_MERGED"
-merge_static "simulator" "$SIM_OPENCV_PREFIX"    "$SIM_EXTERN_DIR"    "$SIM_MERGED"
+merge_static "device"    "$DEVICE_OPENCV_PREFIX" "$DEVICE_EXTERN_DIR" "$DEVICE_STUBS_O" "$DEVICE_MERGED"
+merge_static "simulator" "$SIM_OPENCV_PREFIX"    "$SIM_EXTERN_DIR"    "$SIM_STUBS_O"    "$SIM_MERGED"
 
 assemble_xcframework "$DEVICE_MERGED" "$SIM_MERGED" "$XCFRAMEWORK_OUT"
 
 echo ""
 echo "=== Done ==="
 echo "xcframework output: $XCFRAMEWORK_OUT"
-echo "Drop this into the NuGet package directory before packing."
+echo "Next: dotnet build src/OpenCvSharp/OpenCvSharp.csproj -f net9.0-ios -c Release"
+echo "      mono ios-build/nuget.exe pack nuget/ios/OpenCvSharp4.runtime.ios.nuspec -OutputDirectory ios-build/nupkg"
