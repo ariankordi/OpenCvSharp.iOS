@@ -30,7 +30,6 @@ OPENCV_CMAKE_ARGS=(
     -DBUILD_LIST=core,imgproc,imgcodecs
     -DBUILD_SHARED_LIBS=OFF
     -DOPENCV_FORCE_3RDPARTY_BUILD=ON
-    -DENABLE_NEON=OFF
     -DBUILD_EXAMPLES=OFF
     -DBUILD_opencv_apps=OFF
     -DBUILD_DOCS=OFF
@@ -47,6 +46,11 @@ OPENCV_CMAKE_ARGS=(
     -DWITH_QUIRC=OFF
     -DOPENCV_ENABLE_NONFREE=OFF
     -DIPHONEOS_DEPLOYMENT_TARGET="$IPHONEOS_DEPLOYMENT_TARGET"
+    # KleidiCV is an ARM-only 3rdparty HAL new in OpenCV 4.13. It passes -mcpu=armv8-a
+    # explicitly, which breaks when Xcode also tries to compile a fat simulator binary
+    # (x86_64 + arm64). Disabling it keeps the build ARM-only without losing functionality.
+    -DWITH_KLEIDICV=OFF
+    -DWITH_ADE=OFF
 )
 
 # All non-core modules disabled so the extern source compiles cleanly.
@@ -75,12 +79,25 @@ build_opencv() {
 
     echo "=== Build OpenCV [$slice] ==="
     local build_dir="$BUILD_DIR/opencv-build-$slice"
-    rm -rf "$build_dir"
+    #rm -rf "$build_dir"
     mkdir -p "$build_dir"
 
+    # The iPhoneSimulator SDK (arm64-apple-ios-simulator) does not define __ARM_FP, so
+    # libjpeg-turbo's SIMD cmake detection fails ambiguously and ends up forcing
+    # NEON_INTRINSICS=ON anyway, which then breaks at compile time.  ENABLE_LIBJPEG_TURBO_SIMD
+    # is the OpenCV-level gate that skips the entire SIMD subdirectory cleanly.
+    local extra_cmake_args=()
+    if [[ "$slice" == "simulator" ]]; then
+        extra_cmake_args+=(-DENABLE_LIBJPEG_TURBO_SIMD=OFF)
+    fi
+
+    # Ninja avoids the per-test xcodebuild overhead that makes try_compile checks very slow.
+    # STATIC_LIBRARY mode skips the link/run step so compile-only checks work for iOS cross-builds.
     cmake -S "$OPENCV_SRC" -B "$build_dir" \
-        -G Xcode \
+        -G Ninja \
         "${OPENCV_CMAKE_ARGS[@]}" \
+        ${extra_cmake_args[@]+"${extra_cmake_args[@]}"} \
+        -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
         -DCMAKE_TOOLCHAIN_FILE="$toolchain" \
         -DIOS_ARCH=arm64 \
         -DCMAKE_INSTALL_PREFIX="$prefix"
@@ -102,12 +119,13 @@ build_extern() {
         toolchain="$OPENCV_SRC/platforms/ios/cmake/Toolchains/Toolchain-iPhoneSimulator_Xcode.cmake"
     fi
 
-    rm -rf "$out_dir"
+    #rm -rf "$out_dir"
     mkdir -p "$out_dir"
 
     cmake -S "$ROOT_DIR/src" -B "$out_dir" \
-        -G Xcode \
+        -G Ninja \
         "${EXTERN_CMAKE_ARGS[@]}" \
+        -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
         -DCMAKE_TOOLCHAIN_FILE="$toolchain" \
         -DIOS_ARCH=arm64 \
         -DIPHONEOS_DEPLOYMENT_TARGET="$IPHONEOS_DEPLOYMENT_TARGET" \
@@ -141,7 +159,7 @@ assemble_xcframework() {
     echo "=== Assemble xcframework ==="
     # lipo cannot merge two arm64 slices (device vs simulator differ only by SDK, not arch).
     # xcodebuild -create-xcframework disambiguates them via Info.plist metadata.
-    rm -rf "$out"
+    #rm -rf "$out"
     xcodebuild -create-xcframework \
         -library "$device_a" \
         -library "$sim_a" \
