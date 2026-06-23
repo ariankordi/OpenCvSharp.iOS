@@ -17,7 +17,13 @@ namespace OpenCvSharp.Internal;
 /// </summary>
 public static partial class NativeMethods
 {
+#if IOS
+    // On iOS, OpenCvSharpExtern is statically linked into the app binary.
+    // "__Internal" is the Apple AOT sentinel that resolves against the main executable image.
+    public const string DllExtern = "__Internal";
+#else
     public const string DllExtern = "OpenCvSharpExtern";
+#endif
 
     //public const string DllFfmpegX86 = "opencv_videoio_ffmpeg430";
     //public const string DllFfmpegX64 = "opencv_videoio_ffmpeg430_64";

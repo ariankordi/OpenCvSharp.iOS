@@ -1,21 +1,22 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <NoBuild>true</NoBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput>
 
     <!-- NuGet Package Metadata -->
     <PackageId>OpenCvSharp4.runtime.ios</PackageId>
-    <Title>OpenCvSharp native bindings for iOS (device + simulator, arm64)</Title>
+    <Title>OpenCvSharp for iOS (managed + native, device + simulator, arm64)</Title>
     <Authors>shimat</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/shimat/opencvsharp</PackageProjectUrl>
     <PackageIcon>opencvsharp.png</PackageIcon>
     <Description>
-      Native binding for OpenCvSharp4 on iOS. Contains a static xcframework covering
+      OpenCvSharp4 for .NET MAUI iOS. Bundles the managed assembly (compiled with
+      __Internal P/Invoke for static linking) and a static xcframework covering
       ios-arm64 (physical device) and iossimulator-arm64 (Simulator), built with
-      core, imgproc, and imgcodecs modules only.
-      Add this package alongside OpenCvSharp4 in your .NET MAUI iOS project.
+      core, imgproc, and imgcodecs modules only. Reference this package instead of
+      OpenCvSharp4 + a separate runtime package in your iOS project.
     </Description>
     <PackageTags>Image Processing OpenCV Wrapper FFI opencvsharp ios maui</PackageTags>
     <Copyright>Copyright 2008-2026</Copyright>
@@ -27,34 +28,34 @@
   </PropertyGroup>
 
   <!--
-    The xcframework is produced by src/tools/build-opencvsharp-ios.sh at
-    ios-build/OpenCvSharpExtern.xcframework (relative to the repo root).
-    Run that script before dotnet pack.
+    Prerequisites before dotnet pack:
+      1. dotnet build src/OpenCvSharp/OpenCvSharp.csproj -f net9.0-ios -c Release
+      2. src/tools/build-opencvsharp-ios.sh  (produces ios-build/OpenCvSharpExtern.xcframework)
   -->
   <ItemGroup>
-    <!-- xcframework is a directory; pack every file inside it preserving the tree -->
+    <!-- Managed assembly compiled with DllExtern = "__Internal" for iOS static linking -->
+    <None Include="..\..\src\OpenCvSharp\bin\Release\net9.0-ios\OpenCvSharp.dll"
+          Pack="true"
+          PackagePath="lib\net9.0-ios\OpenCvSharp.dll" />
+    <None Include="..\..\src\OpenCvSharp\bin\Release\net9.0-ios\OpenCvSharp.xml"
+          Pack="true"
+          PackagePath="lib\net9.0-ios\OpenCvSharp.xml" />
+
+    <!-- xcframework: both ios-arm64 (device) and ios-arm64-simulator slices -->
     <None Include="..\..\ios-build\OpenCvSharpExtern.xcframework\**"
           Pack="true"
           PackagePath="OpenCvSharpExtern.xcframework\%(RecursiveDir)%(Filename)%(Extension)" />
 
     <!--
       MSBuild targets that inject <NativeReference> into the consuming MAUI project.
-      Use build\net8.0\ (not build\net8.0-ios\) to avoid NU1012: NuGet SDK 10+ requires
-      a full platform version for platform-specific TFMs in PackagePath (net8.0-ios16.0 etc).
-      The condition inside the targets file already gates injection on -ios TFMs only, so
-      non-iOS consumers referencing this package are unaffected.
-      buildTransitive\ ensures transitive consumers (e.g. a class library used by the MAUI app)
-      also get the NativeReference injected.
+      The condition inside gates on -ios TFMs only.
     -->
     <None Include="OpenCvSharp4.runtime.ios.targets"
           Pack="true"
-          PackagePath="build\net8.0\OpenCvSharp4.runtime.ios.targets" />
+          PackagePath="build\net9.0\OpenCvSharp4.runtime.ios.targets" />
     <None Include="OpenCvSharp4.runtime.ios.targets"
           Pack="true"
-          PackagePath="buildTransitive\net8.0\OpenCvSharp4.runtime.ios.targets" />
-
-    <!-- Placeholder to suppress NU5127/NU5128: this is a native-only package with no managed assembly -->
-    <None Include="_._" Pack="true" PackagePath="lib\net8.0\_._" Visible="false" />
+          PackagePath="buildTransitive\net9.0\OpenCvSharp4.runtime.ios.targets" />
 
     <None Include="..\icon\opencvsharp.png" Pack="true" PackagePath="" />
     <None Include="..\README.runtime.md" Pack="true" PackagePath="" />

@@ -6,7 +6,7 @@
     and DllImport("OpenCvSharpExtern") throws DllNotFoundException at runtime.
   -->
   <ItemGroup Condition="$(TargetFramework.StartsWith('net')) And $(TargetFramework.Contains('-ios'))">
-    <NativeReference Include="$(MSBuildThisFileDirectory)..\..\OpenCvSharpExtern.xcframework">
+    <NativeReference Include="$(MSBuildThisFileDirectory)..\OpenCvSharpExtern.xcframework">
       <Kind>Static</Kind>
       <ForceLoad>True</ForceLoad>
       <SmartLink>False</SmartLink>

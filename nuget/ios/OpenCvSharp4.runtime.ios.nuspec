@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>OpenCvSharp4.runtime.ios</id>
+    <version>4.13.0.1</version>
+    <title>OpenCvSharp for iOS (managed + native, device + simulator, arm64)</title>
+    <authors>shimat</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">Apache-2.0</license>
+    <projectUrl>https://github.com/shimat/opencvsharp</projectUrl>
+    <icon>opencvsharp.png</icon>
+    <readme>README.runtime.md</readme>
+    <description>OpenCvSharp4 for .NET MAUI iOS. Bundles the managed assembly (compiled with __Internal P/Invoke for static linking) and a static xcframework covering ios-arm64 (device) and ios-arm64-simulator, with core, imgproc, and imgcodecs modules. Reference this package instead of OpenCvSharp4 in your iOS project — do not reference both.</description>
+    <tags>Image Processing OpenCV Wrapper FFI opencvsharp ios maui</tags>
+    <copyright>Copyright 2008-2026</copyright>
+    <!-- No package dependencies: everything OpenCvSharp.dll needs on iOS is in the .NET shared framework.
+         The group matches the lib/net8.0-ios13.0 folder so NuGet records the supported TFM. -->
+    <dependencies>
+      <group targetFramework="net8.0-ios13.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <!--
+      Managed assembly compiled with DllExtern = "__Internal" for iOS static linking.
+      Placed under net8.0-ios13.0 (our iOS deployment-target floor). NuGet platform-version
+      compatibility is downward: any consumer >= net8.0-ios13.0 selects it, so this single
+      folder serves net8.0-ios, net9.0-ios, and net10.0-ios apps on any iOS SDK >= 13.0.
+    -->
+    <file src="../../src/OpenCvSharp/bin/Release/net9.0-ios/OpenCvSharp.dll" target="lib/net8.0-ios13.0/OpenCvSharp.dll" />
+    <file src="../../src/OpenCvSharp/bin/Release/net9.0-ios/OpenCvSharp.xml" target="lib/net8.0-ios13.0/OpenCvSharp.xml" />
+
+    <!-- Native static xcframework: ios-arm64 (device) + ios-arm64-simulator slices -->
+    <file src="../../ios-build/OpenCvSharpExtern.xcframework/**" target="OpenCvSharpExtern.xcframework" />
+
+    <!--
+      MSBuild targets inject <NativeReference> into the consuming iOS project.
+      TFM-less build/ folder with the filename matching the package id is auto-imported by
+      NuGet for every consumer; the internal -ios condition gates the NativeReference so
+      non-iOS consumers are unaffected. This also sidesteps NU1012 (no platform TFM in path).
+      buildTransitive/ flows the import through to transitive consumers.
+    -->
+    <file src="OpenCvSharp4.runtime.ios.targets" target="build/OpenCvSharp4.runtime.ios.targets" />
+    <file src="OpenCvSharp4.runtime.ios.targets" target="buildTransitive/OpenCvSharp4.runtime.ios.targets" />
+
+    <file src="../icon/opencvsharp.png" target="" />
+    <file src="../README.runtime.md" target="" />
+  </files>
+</package>
