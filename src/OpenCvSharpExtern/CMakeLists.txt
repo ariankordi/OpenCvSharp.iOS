@@ -12,7 +12,9 @@ ENDIF()
 file(GLOB OPENCVSHARP_FILES *.cpp)
 
 # Resolve Protobuf target before OpenCV config is loaded.
-if(APPLE)
+# Skip on iOS: Protobuf cross-compile is not needed for the minimal module set and the
+# iOS toolchain does not provide a usable Protobuf CMake config.
+if(APPLE AND NOT IOS)
 	find_package(Protobuf REQUIRED)
 endif()
 
@@ -49,12 +51,17 @@ if(OpenCV_FOUND)
 	if(EMSCRIPTEN)
 		# TODO: replace path
 		add_library(OpenCvSharpExtern STATIC ${OPENCVSHARP_FILES} ${WASM_LIB})
+	elseif(IOS)
+		# iOS requires a static archive: the App Store forbids loose dylibs and
+		# DllImport resolves against the statically-linked main executable at runtime.
+		# OpenCV libs are linked by the consuming app via the xcframework, not here.
+		add_library(OpenCvSharpExtern STATIC ${OPENCVSHARP_FILES})
 	else()
 		add_library(OpenCvSharpExtern SHARED ${OPENCVSHARP_FILES})
 		target_link_libraries(OpenCvSharpExtern ${OpenCV_LIBRARIES})
 	endif()
 
-	if(Iconv_FOUND)
+	if(Iconv_FOUND AND NOT IOS AND NOT EMSCRIPTEN)
 		target_link_libraries(OpenCvSharpExtern Iconv::Iconv)
 	endif()
 

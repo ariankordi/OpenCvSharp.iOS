@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <NoBuild>true</NoBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>OpenCvSharp4.runtime.ios</PackageId>
+    <Title>OpenCvSharp native bindings for iOS (device + simulator, arm64)</Title>
+    <Authors>shimat</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/shimat/opencvsharp</PackageProjectUrl>
+    <PackageIcon>opencvsharp.png</PackageIcon>
+    <Description>
+      Native binding for OpenCvSharp4 on iOS. Contains a static xcframework covering
+      ios-arm64 (physical device) and iossimulator-arm64 (Simulator), built with
+      core, imgproc, and imgcodecs modules only.
+      Add this package alongside OpenCvSharp4 in your .NET MAUI iOS project.
+    </Description>
+    <PackageTags>Image Processing OpenCV Wrapper FFI opencvsharp ios maui</PackageTags>
+    <Copyright>Copyright 2008-2026</Copyright>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/shimat/opencvsharp.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.runtime.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!--
+    The xcframework is produced by src/tools/build-opencvsharp-ios.sh at
+    ios-build/OpenCvSharpExtern.xcframework (relative to the repo root).
+    Run that script before dotnet pack.
+  -->
+  <ItemGroup>
+    <!-- xcframework is a directory; pack every file inside it preserving the tree -->
+    <None Include="..\..\ios-build\OpenCvSharpExtern.xcframework\**"
+          Pack="true"
+          PackagePath="OpenCvSharpExtern.xcframework\%(RecursiveDir)%(Filename)%(Extension)" />
+
+    <!-- MSBuild targets that inject <NativeReference> into the consuming MAUI project -->
+    <None Include="OpenCvSharp4.runtime.ios.targets"
+          Pack="true"
+          PackagePath="build\net8.0-ios\OpenCvSharp4.runtime.ios.targets" />
+    <!--
+      Also install for net9.0-ios, net10.0-ios, etc. via a TFM-agnostic fallback.
+      NuGet resolves build\{tfm}\*.targets before build\*.targets, but the -ios suffix
+      means only ios consumers pick this up even from the generic path.
+    -->
+    <None Include="OpenCvSharp4.runtime.ios.targets"
+          Pack="true"
+          PackagePath="buildTransitive\net8.0-ios\OpenCvSharp4.runtime.ios.targets" />
+
+    <None Include="..\icon\opencvsharp.png" Pack="true" PackagePath="" />
+    <None Include="..\README.runtime.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+</Project>
